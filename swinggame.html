@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swing</title>
+<style>
+html,body{margin:0;overflow:hidden;background:#05070c;}
+canvas{display:block;background:#0b1020;}
+button{
+  position:fixed;bottom:20px;
+  width:60px;height:60px;
+  font-size:22px;border-radius:50%;
+  opacity:.8;border:none;
+}
+#left{left:20px}
+#right{left:100px}
+#jump{right:100px}
+#web{right:20px}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<button id="left">⬅</button>
+<button id="right">➡</button>
+<button id="jump">⬆</button>
+<button id="web">🕸</button>
+
+<script>
+/* ================= SETUP ================= */
+const c=document.getElementById("c");
+const ctx=c.getContext("2d");
+resize(); window.onresize=resize;
+function resize(){c.width=innerWidth;c.height=innerHeight;}
+
+const GRAVITY=0.32;
+const GROUND_Y=900;
+const AIR_DRAG=0.993;
+
+/* ================= CITY ================= */
+function makeBuildings(count,minH,maxH,spacing){
+  const arr=[];
+  for(let i=0;i<count;i++){
+    arr.push({
+      x:i*spacing,
+      w:200+Math.random()*140,
+      h:minH+Math.random()*(maxH-minH),
+      windows:true
+    });
+  }
+  return arr;
+}
+
+const farCity = makeBuildings(40,600,1000,420);
+const midCity = makeBuildings(40,1000,1600,380);
+const nearCity= makeBuildings(40,1600,2500,340);
+
+/* ================= PLATFORMS ================= */
+const platforms=[
+  {x:600,y:520,w:220,h:20},
+  {x:1100,y:430,w:260,h:20},
+  {x:1700,y:360,w:300,h:20},
+  {x:2300,y:500,w:200,h:20},
+  {x:2800,y:420,w:260,h:20},
+  {x:3400,y:380,w:300,h:20},
+  {x:4000,y:600,w:220,h:20},
+  {x:4600,y:450,w:240,h:20}
+];
+
+/* ================= PLAYER ================= */
+const player={
+  x:200,y:GROUND_Y-60,
+  w:30,h:60,
+  vx:0,vy:0,
+  onGround:false,
+  web:null,
+  zipFx:0,
+  anim:0,
+  wallCling:false
+};
+
+/* ================= INPUT ================= */
+const input={l:0,r:0,j:0,w:0};
+bind("left","l"); bind("right","r"); bind("jump","j"); bind("web","w");
+function bind(id,k){
+  const b=document.getElementById(id);
+  b.ontouchstart=()=>input[k]=1;
+  b.ontouchend=()=>input[k]=0;
+}
+document.onkeydown=e=>{
+  if(e.key==="a")input.l=1;
+  if(e.key==="d")input.r=1;
+  if(e.key==="w")input.j=1;
+  if(e.key===" ")input.w=1;
+};
+document.onkeyup=e=>{
+  if(e.key==="a")input.l=0;
+  if(e.key==="d")input.r=0;
+  if(e.key==="w")input.j=0;
+  if(e.key===" ")input.w=0;
+};
+
+let lastInputJ=0;
+
+/* ================= CAMERA ================= */
+let camX=0,camY=0;
+
+/* ================= LOOP ================= */
+function update(){
+
+  /* ---- WALK ---- */
+  if(!player.web){
+    if(input.l) player.vx=-3;
+    else if(input.r) player.vx=3;
+    else player.vx*=0.85;
+  }
+
+  /* ---- JUMP & VERTICAL WEB ZIP ---- */
+  const jumpPressed = input.j && !lastInputJ;
+
+  if(jumpPressed && player.onGround){
+    player.vy=-9;
+    player.onGround=false;
+  }
+  else if(jumpPressed && !player.onGround){
+    player.vy=-12; // vertical web zip
+    player.zipFx=6;
+  }
+
+  lastInputJ=input.j;
+
+  /* ---- WEB START ---- */
+  if(input.w && !player.web){
+    const ax=player.x + (input.l?-300:300); // side-biased swing start
+    const ay=player.y-320;
+    player.web={ax,ay,len:Math.hypot(player.x-ax,player.y-ay)};
+  }
+
+  /* ---- SWING PHYSICS ---- */
+  if(player.web){
+    const dx=player.x-player.web.ax;
+    const dy=player.y-player.web.ay;
+    const dist=Math.hypot(dx,dy)||1;
+    const nx=dx/dist, ny=dy/dist;
+    const stretch=dist-player.web.len;
+    const pull=stretch*0.04; // Spider-Man swing
+
+    player.vx -= nx*pull;
+    player.vy -= ny*pull;
+
+    if(Math.abs(stretch)<8 && player.vy>0) player.vy *= 0.9; // apex hang
+
+    if(input.l) player.vx -=0.25;
+    if(input.r) player.vx +=0.25;
+
+    player.vy += GRAVITY*0.15; // reduced gravity
+
+    player.x += player.vx;
+    player.y += player.vy;
+
+    if(!input.w){
+      player.vx *= 1.1; // preserve momentum
+      player.web = null;
+    }
+  } else {
+    player.vy += GRAVITY;
+    player.x += player.vx;
+    player.y += player.vy;
+  }
+
+  player.vx *= AIR_DRAG;
+
+  /* ---- GROUND ---- */
+  if(player.y+player.h>=GROUND_Y){
+    player.y=GROUND_Y-player.h;
+    player.vy=0;
+    player.onGround=true;
+  } else player.onGround=false;
+
+  /* ---- PLATFORMS & WALL CLING ---- */
+  player.wallCling=false;
+  for(const p of platforms){
+    if(player.x+player.w>p.x && player.x<p.x+p.w &&
+       player.y+player.h>p.y && player.y+player.h<p.y+20 &&
+       player.vy>=0){
+      player.y=p.y-player.h;
+      player.vy=0;
+      player.onGround=true;
+    }
+    if(player.x+player.w>p.x-5 && player.x<p.x+p.w+5 &&
+       player.y+player.h>p.y-50 && player.y+player.h<p.y+50 && !player.onGround){
+      player.wallCling=true;
+    }
+  }
+
+  /* ---- CAMERA ---- */
+  camX += (player.x - camX - c.width/2)*0.1;
+  camY += (player.y - camY - c.height/2)*0.12;
+
+  player.anim +=0.15;
+}
+
+/* ================= DRAW ================= */
+function drawCity(list,parallax,color,win){
+  ctx.fillStyle=color;
+  for(const b of list){
+    const bx=b.x*parallax;
+    ctx.fillRect(bx,GROUND_Y-b.h,b.w,b.h);
+    ctx.fillStyle=win;
+    for(let y=GROUND_Y-b.h+30;y<GROUND_Y-40;y+=50)
+      for(let x=bx+20;x<bx+b.w-20;x+=40)
+        ctx.fillRect(x,y,10,18);
+    ctx.fillStyle=color;
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.save(); ctx.translate(-camX,-camY);
+
+  drawCity(farCity,0.3,"#0b1328","rgba(255,220,120,.08)");
+  drawCity(midCity,0.6,"#111d3b","rgba(255,220,120,.12)");
+  drawCity(nearCity,1,"#18264d","rgba(255,220,120,.18)");
+
+  ctx.fillStyle="#02040a";
+  ctx.fillRect(-5000,GROUND_Y,15000,600);
+
+  // PLATFORMS
+  ctx.fillStyle="#6b4a2b";
+  for(const p of platforms) ctx.fillRect(p.x,p.y,p.w,p.h);
+
+  /* ---- WEB ---- */
+  if(player.web){
+    ctx.strokeStyle="white";
+    ctx.beginPath();
+    ctx.moveTo(player.web.ax,player.web.ay);
+    ctx.lineTo(player.x+15,player.y+30);
+    ctx.stroke();
+  }
+
+  /* ---- ZIP FLASH ---- */
+  if(player.zipFx>0){
+    ctx.strokeStyle="white";
+    ctx.beginPath();
+    ctx.moveTo(player.x+15,player.y+30);
+    ctx.lineTo(player.x+15,player.y-40);
+    ctx.stroke();
+    player.zipFx--;
+  }
+
+  /* ---- PLAYER ---- */
+  ctx.save();
+  const cx=player.x+15;
+  const cy=player.y+30;
+  let tilt=player.vx*0.06;
+  if(!player.onGround && !player.web) tilt += player.vy*0.04;
+  ctx.translate(cx,cy);
+  ctx.rotate(tilt);
+
+  ctx.fillStyle="red";
+  ctx.fillRect(-15,-30,30,40);
+
+  let leg=0;
+  if(player.web) leg=Math.sin(player.anim)*14;
+  else if(!player.onGround) leg=12;
+
+  ctx.fillRect(-12,10+leg,10,30);
+  ctx.fillRect(2,10-leg,10,30);
+
+  if(player.web || player.zipFx>0){
+    ctx.fillRect(0,-5,30,10);
+    ctx.fillRect(-25,-10,10,25);
+  } else {
+    ctx.fillRect(-20,-20,10,25);
+    ctx.fillRect(10,-20,10,25);
+  }
+
+  // Wall cling indicator
+  if(player.wallCling){
+    ctx.fillStyle="yellow";
+    ctx.fillRect(-15,-35,30,5);
+  }
+
+  ctx.restore();
+  ctx.restore();
+}
+
+(function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

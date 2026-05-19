@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Block-Man: Aerodynamic Fix</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #080a0f; touch-action: none; font-family: monospace; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        
+        #ui { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; pointer-events: none; }
+        
+        .joy-base { width: 110px; height: 110px; background: rgba(255,255,255,0.08); border: 2px solid #333; border-radius: 12px; position: relative; pointer-events: auto; }
+        #stick { width: 45px; height: 45px; background: #fff; border-radius: 6px; position: absolute; top: 32.5px; left: 32.5px; pointer-events: none; }
+        
+        .btn-group { display: flex; gap: 8px; pointer-events: auto; align-items: flex-end; }
+        .btn { width: 65px; height: 65px; background: #1a1a1a; border: 2px solid #fff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px; border-radius: 8px; user-select: none; }
+        .btn:active { background: #fff; color: #000; }
+        .active-fly { background: #0088ff !important; border-color: #0088ff; }
+        .active-boost { background: #cc0000 !important; border-color: #ff3333; }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <div id="ui">
+        <div class="joy-base" id="joyZone"><div id="stick"></div></div>
+        <div class="btn-group">
+            <div class="btn" id="flyBtn">FLY</div>
+            <div class="btn" id="boostBtn">BOOST</div>
+            <div class="btn" id="jumpBtn">JUMP</div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const GROUND_Y = 1000; 
+const GRAVITY = 0.8;
+const BASE_SPEED = 9;
+const BOOST_SPEED = 22;
+const JUMP = -18;
+
+// SLEEK AERODYNAMIC PROPORTIONS
+const player = {
+    x: 0, y: GROUND_Y - 50,
+    w: 20, h: 40, // Taller than it is wide (including hands)
+    vx: 0, vy: 0,
+    angle: 0,
+    lastAngle: 0,
+    grounded: false,
+    isFlying: false,
+    isBoost: false,
+    facing: 1,
+    flightTimer: 0, 
+    handY: 0 
+};
+
+let cam = { x: 0, y: 0 };
+let joyX = 0, joyY = 0;
+const activePointers = new Map();
+
+// Wind Trails
+const windLines = [];
+
+// Scenery
+const mapScenery = [];
+for(let i = -500; i < 500; i++) {
+    if(Math.random() > 0.4) {
+        mapScenery.push({
+            x: i * 150 + Math.random() * 50,
+            w: 40 + Math.random() * 60,
+            h: 100 + Math.random() * 600,
+            col: `hsl(210, 15%, ${10 + Math.random() * 10}%)`
+        });
+    }
+}
+
+// Controls
+window.addEventListener('pointerdown', (e) => {
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (e.target.id === 'jumpBtn' && player.grounded && !player.isFlying) {
+        player.vy = JUMP;
+        player.grounded = false;
+    }
+    if (e.target.id === 'flyBtn') {
+        player.isFlying = !player.isFlying;
+        e.target.classList.toggle('active-fly');
+        player.vy = 0; 
+    }
+    if (e.target.id === 'boostBtn') {
+        player.isBoost = true;
+        e.target.classList.add('active-boost');
+    }
+});
+
+window.addEventListener('pointermove', (e) => {
+    if (activePointers.has(e.pointerId)) {
+        const r = document.getElementById('joyZone').getBoundingClientRect();
+        if (e.clientX < window.innerWidth / 2) {
+            const cx = r.left + r.width/2;
+            const cy = r.top + r.height/2;
+            let dx = e.clientX - cx;
+            let dy = e.clientY - cy;
+            const max = 35;
+            
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > max) { dx *= max/dist; dy *= max/dist; }
+            
+            document.getElementById('stick').style.transform = `translate(${dx}px, ${dy}px)`;
+            joyX = dx / max;
+            joyY = dy / max;
+        }
+    }
+});
+
+window.addEventListener('pointerup', (e) => {
+    activePointers.delete(e.pointerId);
+    if (e.clientX < window.innerWidth / 2) {
+        joyX = 0; joyY = 0;
+        document.getElementById('stick').style.transform = `translate(0px, 0px)`;
+    }
+    if (e.target.id === 'boostBtn') {
+        player.isBoost = false;
+        e.target.classList.remove('active-boost');
+    }
+});
+
+function update() {
+    let currentSpeed = player.isBoost ? BOOST_SPEED : BASE_SPEED;
+    
+    player.vx = joyX * currentSpeed;
+    if (player.isFlying) {
+        player.vy = joyY * currentSpeed;
+    } else {
+        player.vy += GRAVITY;
+    }
+
+    player.x += player.vx;
+    player.y += player.vy;
+
+    if (player.vx > 0.1) player.facing = 1;
+    if (player.vx < -0.1) player.facing = -1;
+
+    // Smooth Rotation
+    let targetAngle = 0;
+    if (player.isFlying) {
+        if (Math.abs(joyX) > 0.1 || Math.abs(joyY) > 0.1) {
+            targetAngle = Math.atan2(joyY, joyX) + Math.PI / 2;
+            player.lastAngle = targetAngle;
+        } else {
+            targetAngle = player.lastAngle; 
+        }
+    } else {
+        targetAngle = 0; 
+    }
+    
+    let diff = targetAngle - player.angle;
+    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+    player.angle += diff * 0.25;
+
+    // FAST HAND ANIMATION (Snaps forward quickly)
+    if (player.isFlying && !player.isBoost && (Math.abs(joyX) > 0.1 || Math.abs(joyY) > 0.1)) {
+        player.flightTimer++; 
+    } else {
+        player.flightTimer = 0; 
+    }
+
+    let targetHandY = 0; 
+    if (player.isBoost) {
+        targetHandY = 10; // Pull back
+    } else if (player.flightTimer > 45) { // Under 1 second to move forward!
+        targetHandY = -14; // Push forward
+    }
+    player.handY += (targetHandY - player.handY) * 0.25; // Snappy interpolation
+
+    // WIND TRAIL EFFECTS
+    if (player.isBoost && (Math.abs(player.vx) > 0 || Math.abs(player.vy) > 0)) {
+        for(let i=0; i<2; i++) {
+            windLines.push({
+                x: player.x + player.w/2 + (Math.random() - 0.5) * 50,
+                y: player.y + player.h/2 + (Math.random() - 0.5) * 50,
+                vx: -Math.cos(player.angle - Math.PI/2) * (15 + Math.random() * 10),
+                vy: -Math.sin(player.angle - Math.PI/2) * (15 + Math.random() * 10),
+                life: 1.0
+            });
+        }
+    }
+
+    for (let i = windLines.length - 1; i >= 0; i--) {
+        let w = windLines[i];
+        w.x += w.vx;
+        w.y += w.vy;
+        w.life -= 0.08;
+        if (w.life <= 0) windLines.splice(i, 1);
+    }
+
+    // Collision
+    if (player.y + player.h > GROUND_Y) {
+        player.y = GROUND_Y - player.h;
+        player.vy = 0;
+        player.grounded = true;
+    } else {
+        player.grounded = false;
+    }
+
+    // Camera Lock
+    cam.x = (player.x + player.w / 2) - canvas.width / 2;
+    cam.y = (player.y + player.h / 2) - canvas.height / 2;
+    if(cam.y > GROUND_Y - canvas.height + 200) cam.y = GROUND_Y - canvas.height + 200;
+}
+
+function drawBlockModel(ctx, x, y, angle, handY, facing) {
+    ctx.save();
+    ctx.translate(x + player.w / 2 - cam.x, y + player.h / 2 - cam.y);
+    ctx.rotate(angle);
+
+    // CAPE
+    ctx.save();
+    let speed = Math.sqrt(player.vx*player.vx + player.vy*player.vy);
+    let flutter = Math.sin(Date.now() / 80) * (speed * 0.015);
+    ctx.translate(0, -player.h / 2 + 2); 
+    ctx.rotate(flutter);
+    ctx.fillStyle = '#b30000';
+    // Sleek cape to match sleek body (16px wide)
+    ctx.fillRect(-8 - (2 * facing), 0, 16, 28); 
+    ctx.restore();
+
+    // HANDS
+    ctx.fillStyle = '#0066cc';
+    let handW = 6, handH = 18;
+    ctx.fillRect(-player.w / 2 - handW, -handH / 2 + handY, handW, handH); 
+    ctx.fillRect(player.w / 2, -handH / 2 + handY, handW, handH);       
+
+    // BODY
+    ctx.fillStyle = '#0088ff';
+    ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
+
+    ctx.restore();
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Map
+    mapScenery.forEach(b => {
+        if (b.x - cam.x > -200 && b.x - cam.x < canvas.width + 200) {
+            ctx.fillStyle = b.col;
+            ctx.fillRect(b.x - cam.x, GROUND_Y - b.h - cam.y, b.w, b.h);
+        }
+    });
+
+    // Ground
+    ctx.fillStyle = '#11151c';
+    ctx.fillRect(0, GROUND_Y - cam.y, canvas.width, 2000);
+
+    // Draw Wind Lines
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+    windLines.forEach(w => {
+        ctx.globalAlpha = w.life;
+        ctx.beginPath();
+        ctx.moveTo(w.x - cam.x, w.y - cam.y);
+        ctx.lineTo(w.x - cam.x - w.vx * 1.5, w.y - cam.y - w.vy * 1.5);
+        ctx.stroke();
+    });
+    ctx.globalAlpha = 1.0;
+
+    // Draw Player
+    drawBlockModel(ctx, player.x, player.y, player.angle, player.handY, player.facing);
+
+    update();
+    requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
