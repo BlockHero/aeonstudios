@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>aeonstudios</title>
+    <style>
+        /* Premium Black & Red Theme */
+        :root {
+            --bg-solid: #000000;
+            --bg-elevated: #0a0a0a;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --accent: #e50914; 
+            --accent-glow: rgba(229, 9, 20, 0.15);
+            --border: #1a1a1a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-solid);
+            background-image: radial-gradient(circle at 50% 0%, #1a0000 0%, #000000 60%);
+            color: var(--text-main);
+            line-height: 1.7;
+            padding-top: 80px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            /* Prevents horizontal scroll from overflowing content */
+            overflow-x: hidden; 
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 0 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+            flex-grow: 1;
+        }
+
+        /* 1. Sticky Header */
+        .sticky-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .header-content {
+            width: 100%;
+            max-width: 500px;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Fixed 1:1 Square Header Logo */
+        .header-logo {
+            height: 40px;
+            width: 40px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        /* Interactive "My Apps" Morphing Container */
+        .apps-wrapper {
+            position: relative;
+        }
+
+        .apps-btn {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .apps-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .apps-btn.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.9);
+        }
+
+        /* Premium Dropdown Menu */
+        .apps-dropdown {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            width: 220px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            box-shadow: 0 10px 40px var(--accent-glow);
+            
+            opacity: 0;
+            transform: scale(0.8);
+            transform-origin: top right;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .apps-dropdown.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .dropdown-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: var(--accent);
+        }
+
+        .dropdown-link {
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 14px 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .dropdown-link:hover, .dropdown-link:active {
+            background-color: var(--accent-glow);
+            color: var(--accent);
+            padding-left: 18px;
+        }
+
+        /* Flowing Sections Animations */
+        .flow-section {
+            animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .flow-section:nth-child(1) { animation-delay: 0.1s; }
+        .flow-section:nth-child(2) { animation-delay: 0.2s; }
+        .flow-section:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--accent);
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        /* 2. About Text */
+        .about-text {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            font-weight: 300;
+        }
+
+        .about-text strong {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        /* 3. Projects Stack */
+        .project-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .project-item {
+            text-decoration: none;
+            color: inherit;
+            border-left: 1px solid var(--border);
+            padding-left: 16px;
+            transition: all 0.3s ease;
+            display: block;
+            cursor: pointer; /* Makes it clear it's clickable */
+        }
+
+        .project-item:hover, .project-item:active {
+            border-left-color: var(--accent);
+            background: linear-gradient(90deg, var(--accent-glow) 0%, transparent 100%);
+            transform: translateX(4px);
+        }
+
+        .project-name {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .project-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        /* 4. Hobbies List */
+        .hobbies-text {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 300;
+        }
+
+        .hobbies-text ul {
+            margin-top: 16px;
+            list-style: none;
+        }
+
+        .hobbies-text li {
+            margin-bottom: 16px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .hobbies-text li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 6px;
+            height: 6px;
+            background-color: var(--accent);
+            border-radius: 50%;
+        }
+
+        /* 5. Footer Layout Setup */
+        footer {
+            margin-top: 60px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+
+        .footer-socials-wrapper {
+            width: 100%;
+            border-top: 1px solid var(--border);
+            padding-top: 32px;
+        }
+
+        /* Updated Socials Grid (3 Columns) */
+        .socials-box {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px 12px; /* 16px row gap, 12px column gap */
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .social-link {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.70rem; /* Smaller text */
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+            word-wrap: break-word; /* Prevents long text from breaking grid */
+            line-height: 1.4;
+        }
+
+        .social-link:hover, .social-link:active {
+            color: var(--accent);
+        }
+
+        .footer-logo-wrapper {
+            width: 100%;
+            margin-top: auto; 
+        }
+
+        .footer-logo {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        /* ============================ */
+        /* PROJECT POPUP MODAL STYLES   */
+        /* ============================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 24px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            padding: 24px;
+            position: relative;
+            transform: translateY(20px) scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 10px 50px var(--accent-glow);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .close-modal-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .close-modal-btn:hover {
+            color: var(--accent);
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-main);
+            padding-right: 24px; /* Space for close button */
+        }
+
+        /* 16:9 Media Box Placeholder */
+        .modal-media {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .modal-media img, .modal-media video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-desc {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .modal-go-btn {
+            display: inline-block;
+            background-color: var(--accent);
+            color: #ffffff;
+            text-align: center;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: opacity 0.2s;
+            margin-top: 8px;
+        }
+
+        .modal-go-btn:hover, .modal-go-btn:active {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="sticky-header">
+        <div class="header-content">
+            <img class="header-logo" src="logo.jpg" alt="Square Logo">
+            
+            <div class="apps-wrapper">
+                <button class="apps-btn" id="appsBtn">My Apps</button>
+                
+                <nav class="apps-dropdown" id="appsMenu">
+                    <div class="dropdown-header">
+                        <span class="dropdown-title">My Apps</span>
+                        <button class="close-btn" id="closeBtn">✕</button>
+                    </div>
+                    <a href="demotextgame.html" class="dropdown-link">Demo Text Game</a>
+                    <a href="#" class="dropdown-link">Gamelogged</a>
+                    <a href="jumpingcube.html" class="dropdown-link">Jumping Cube game</a>
+                    <a href="ogmapmaker.html" class="dropdown-link">Original map maker</a>
+                    <a href="PDtest1.html" class="dropdown-link">PD Test 1</a>
+                    <a href="PDtest2.html" class="dropdown-link">PD Test 2</a>
+                    <a href="shootgame.html" class="dropdown-link">Shooting balls</a>
+                    <a href="superflygame.html" class="dropdown-link">Super Fly Game</a>
+                    <a href="swinggame.html" class="dropdown-link">Swing Game</a>
+                    <a href="swordgame.html" class="dropdown-link">Sword Game</a>               
+                     </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+
+        <section class="flow-section">
+            <h2 class="section-title">About Me</h2>
+            <p class="about-text">
+                I'm Nayan and I make shit.
+            </p>
+        </section>
+
+        <section class="flow-section">
+            <h2 class="section-title">Works</h2>
+            <div class="project-stack">
+                
+                <a href="#" class="project-item" data-link="https://www.youtube.com/channel/UCApaGg4bFQeVgTxPriRbunQ" data-media="yt.jpg">
+                    <div class="project-name">Youtube</div>
+                    <div class="project-description">New channel built on ashes of old one because old got hacked and evaporated</div>
+                </a>
+
+                <a href="#" class="project-item" data-link="https://blockhero.github.io/Project-Deus/" data-media="deus.jpg">
+                    <div class="project-name">Project Deus</div>
+                    <div class="project-description">A random game i made in my free time at job in span of a month with help of ChatGPT.</div>
+                </a>
+                
+                <a href="#" class="project-item" data-link="https://drive.google.com/file/d/17FYxGgSbPK2bPWmSlOcWFOhZ8BOHlCul/view?usp=drivesdk" data-media="ultimate.jpg">
+                    <div class="project-name">Ultimate Collection</div>
+                    <div class="project-description">I made some goofy stuff when i was kid so i put some of them together (things that survived) and made this book. it's just fun, nothing else.</div>
+                </a>
+                
+            </div>
+        </section>
+
+        <section class="flow-section">
+            <h2 class="section-title">Hobbies & Interests</h2>
+            <div class="hobbies-text">
+                <ul>
+                    <li>I draw things, mostly comic book characters. When I was kid, i also used to make stuff out of paper and cardboard cuz i needed more toys.</li>
+                    <li>I got a youtube channel, i always had the yt craze since i got on internet.</li>
+                    <li>I play games a lot, different kinds, genres, and platforms.</li>
+                    <li>I love watching movies, like there was a time when i was watching 3 movies a day. oh yeah and it also includes shows.</li>
+                    <li>I love reading books (just omics), joke, I read other books too.</li>
+                    <li><strong>Other Interests</strong> - Game development, Animation, Writing stories, Travelling, Photography, SEO, making music, Making memes, Video/Photo Editing.</li>
+                </ul>
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-socials-wrapper">
+                <h2 class="section-title">All Social Links</h2>
+                <div class="socials-box">
+                    <a href="https://www.instagram.com/new.god.deus" class="social-link">Instagram</a>
+                    <a href="https://www.youtube.com/channel/UCApaGg4bFQeVgTxPriRbunQ" class="social-link">YouTube</a>
+                    <a href="mailto:nayan1812004@gmail.com" class="social-link">Email</a>
+                    <a href="https://letterboxd.com/ultramanzero/" class="social-link">Letterboxd (Movies)</a>
+                    <a href="https://srlzd.com/u/NayaN" class="social-link">Serializd (Shows)</a>
+                    <a href="#" class="social-link">Gamelogged (Games)</a>
+                    <a href="http://www.goodreads.com/friend/i?invite_token=ZDA5ZTRhZjMtYjBiZC00YTkwLWFkZmMtMmQ0YmM1MTFiYzk5" class="social-link">Goodreads (Books)</a>
+                </div>
+            </div>
+            
+            <div class="footer-logo-wrapper">
+                <img class="footer-logo" src="logo2.jpg" alt="Footer Banner">
+            </div>
+        </footer>
+
+    </main>
+
+    <div id="projectModal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="closeProjectBtn" class="close-modal-btn">✕</button>
+            <h3 id="modalTitle" class="modal-title">Project Title</h3>
+            
+            <div class="modal-media">
+                <img id="modalImage" src="deus.jpg" alt="Project Media Placeholder">
+            </div>
+            
+            <p id="modalDesc" class="modal-desc">Project description goes here.</p>
+            <a href="#" id="modalGoBtn" class="modal-go-btn" target="_blank" rel="noopener noreferrer">Go</a>
+        </div>
+    </div>
+
+    <script>
+        // -------------------------
+        // HEADER APPS MENU LOGIC
+        // -------------------------
+        const appsBtn = document.getElementById('appsBtn');
+        const appsMenu = document.getElementById('appsMenu');
+        const closeBtn = document.getElementById('closeBtn');
+
+        function openMenu() {
+            appsBtn.classList.add('hidden');
+            appsMenu.classList.add('active');
+        }
+
+        function closeMenu() {
+            appsMenu.classList.remove('active');
+            appsBtn.classList.remove('hidden');
+        }
+
+        appsBtn.addEventListener('click', (event) => {
+            event.stopPropagation(); 
+            openMenu();
+        });
+
+        closeBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            closeMenu();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!appsMenu.contains(event.target) && event.target !== appsBtn) {
+                closeMenu();
+            }
+        });
+
+        // -------------------------
+        // PROJECT MODAL LOGIC
+        // -------------------------
+        const projectItems = document.querySelectorAll('.project-item');
+        const projectModal = document.getElementById('projectModal');
+        const closeProjectBtn = document.getElementById('closeProjectBtn');
+        
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDesc = document.getElementById('modalDesc');
+        const modalGoBtn = document.getElementById('modalGoBtn');
+        // ***FIX: Grab the image inside the modal to update its src***
+        const modalImage = document.getElementById('modalImage');
+
+        // Listen for clicks on every project card
+        projectItems.forEach(item => {
+            item.addEventListener('click', (event) => {
+                event.preventDefault(); // Prevents page from jumping to top on href="#"
+                
+                // Grab text, link, and ***FIX: media destination*** from the clicked project
+                const title = item.querySelector('.project-name').innerText;
+                const desc = item.querySelector('.project-description').innerText;
+                const linkDest = item.getAttribute('data-link');
+                const mediaDest = item.getAttribute('data-media'); // FIX: Added this line
+                const fallbackImage = 'deus.jpg'; // FIX: Default/fallback image path
+
+                // Inject data into the modal
+                modalTitle.innerText = title;
+                modalDesc.innerText = desc;
+                modalGoBtn.href = linkDest;
+
+                // ***FIX: Update the modal media src***
+                if (mediaDest && mediaDest !== "") {
+                    // Use the specific image/video provided
+                    modalImage.src = mediaDest;
+                    modalImage.alt = `${title} Media`; // Better accessibility
+                } else {
+                    // Fallback to the default image
+                    modalImage.src = fallbackImage;
+                    modalImage.alt = "Project Media Placeholder";
+                }
+
+                // Show the modal
+                projectModal.classList.add('active');
+            });
+        });
+
+        // Close modal when X is clicked
+        closeProjectBtn.addEventListener('click', () => {
+            projectModal.classList.remove('active');
+        });
+
+        // Close modal if clicking outside the content box
+        projectModal.addEventListener('click', (event) => {
+            if (event.target === projectModal) {
+                projectModal.classList.remove('active');
+            }
+        });
+    </script>
+
+</body>
+</html>
