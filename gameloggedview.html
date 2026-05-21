@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GameLogged View</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui;background:#0f0f14;color:#eaeaea}
+/* HEADER */
+header{height:56px;background:#15151d;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+header button{background:none;border:none;color:#eaeaea;font-size:22px;cursor:pointer}
+.title{font-weight:600; font-size: 18px;}
+/* SEARCH */
+#search-bar{padding:10px;border-bottom:1px solid #222}
+#search-input{width:100%;padding:10px;background:#1b1b26;border:1px solid #333;color:#eaeaea;border-radius:6px}
+/* INFO */
+#info-bar{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #222}
+/* LIST */
+#game-list{padding:10px}
+.game-item{padding:12px;border-bottom:1px solid #222;cursor:pointer}
+.game-item:hover{background:#1a1a25}
+/* OVERLAY */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:50}
+/* PANELS */
+.panel{position:fixed;top:0;bottom:0;width:280px;background:#15151d;padding:14px;z-index:100;transition:.25s;overflow-y:auto;}
+#filters{right:-280px}
+#filters.open{right:0}
+.panel button,.panel select,.panel input{width:100%;margin-bottom:10px;padding:10px;background:#1f1f2d;border:none;color:#eaeaea;border-radius:6px}
+/* POPUPS */
+.popup{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:200}
+.popup-card{
+  width:92%;
+  max-width:520px;
+  background:#16161f;
+  padding:16px;
+  border-radius:8px;
+  position: relative; 
+}
+/* GAME CARD */
+.game-card h2{font-size:20px;margin-bottom:6px}
+.meta{font-size:13px;opacity:.75;margin-bottom:12px}
+.row{margin-bottom:10px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.row span{opacity:.7;font-weight:500}
+.replay-list{margin-top:6px;font-size:13px;opacity:.85;padding:6px;border:1px solid #333;border-radius:6px;max-height:120px;overflow-y:auto;display:none;background:#1b1b26}
+.review-box{background:#1b1b26;padding:8px;border-radius:6px;margin-top:10px;font-size:14px;white-space:pre-wrap;line-height:1.4;}
+/* Unified checkbox + text layout */
+.checkbox-list label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 2px 0;
+  width: 100%;
+}
+.checkbox-list label input[type="checkbox"] {
+  order: 2;
+  margin: 0;
+  transform: translateY(1px);
+}
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* GAME CARD SECTIONS */
+.card-section{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid #222;
+}
+.card-section h4{
+  font-size:13px;
+  margin-bottom:8px;
+  opacity:.75;
+  letter-spacing:.02em;
+}
+/* CHIPS (for platforms & tags) */
+.card-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.card-chip{
+  padding:4px 8px;
+  font-size:12px;
+  border-radius:999px;
+  background:#2a2a3a;
+}
+.card-chip.tag{
+  background:#35355a;
+}
+/* REPLAY ACTIONS */
+.replay-actions{
+  display:flex;
+  gap:8px;
+  margin-bottom:6px;
+}
+.replay-actions button{
+  flex:1;
+  font-size:13px;
+  background:#252538;
+  color:#eaeaea;
+  border:none;
+  border-radius:6px;
+  padding:6px;
+  cursor:pointer;
+}
+.replay-actions button:hover { background: #35355a; }
+.replay-count{
+  font-size:13px;
+  opacity:.7;
+  margin-bottom:6px;
+}
+/* REPLAY TIMELINE */
+.replay-timeline{
+  position:relative;
+  margin-top:6px;
+  padding-left:14px;
+}
+.replay-timeline::before{
+  content:"";
+  position:absolute;
+  left:4px;
+  top:0;
+  bottom:0;
+  width:2px;
+  background:#2a2a3a;
+}
+.replay-item{
+  position:relative;
+  margin-bottom:10px;
+  padding-left:12px;
+  font-size:13px;
+}
+.replay-item::before{
+  content:"";
+  position:absolute;
+  left:-2px;
+  top:4px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#6a6aff;
+}
+.replay-item time{
+  opacity:.65;
+  font-size:12px;
+}
+.game-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.game-status {
+  font-size: 12px;
+  opacity: 0.7;
+  background: #2a2a3a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: capitalize;
+  margin-top: 2px;
+}
+.game-meta {
+  font-size: 12px;
+  opacity: 0.7;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.game-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.game-year {
+  font-size: 13px;
+  opacity: 0.6;
+}
+.game-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.game-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+.meta-dot {
+  opacity: 0.5;
+}
+.star-rating {
+  letter-spacing: 1px;
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">GameLogged</div>
+  <button id="btn-filters">⚙️</button>
+</header>
+
+<div id="search-bar">
+  <input id="search-input" placeholder="Search games...">
+</div>
+
+<div id="info-bar">
+  <div id="count">Loading...</div>
+  <select id="sort">
+  <option value="created_desc">Latest added</option>
+  <option value="created_asc">Oldest added</option>
+  <option value="title_asc">Title (A–Z)</option>
+  <option value="title_desc">Title (Z–A)</option>
+  <option value="year_desc">Release year (new → old)</option>
+  <option value="year_asc">Release year (old → new)</option>
+  <option value="rating_desc">Rating (high → low)</option>
+  <option value="rating_asc">Rating (low → high)</option>
+</select>
+</div>
+
+<div id="game-list"></div>
+<div id="overlay"></div>
+
+<div id="filters" class="panel">
+  <label>Status</label>
+  <select id="filter-status">
+    <option value="">All status</option>
+    <option>played</option>
+    <option>completed</option>
+    <option>wishlist</option>
+    <option>playing</option>
+    <option>paused</option>
+  </select>
+
+  <label>Platforms</label>
+  <div id="filter-platforms" class="checkbox-list"></div>
+
+  <label>Tags</label>
+  <input id="filter-tags-search" placeholder="Search tags">
+  <div id="filter-tags" class="checkbox-list"></div>
+
+  <label>Release Year</label>
+  <select id="filter-year">
+    <option value="">All years</option>
+  </select>
+
+  <label>Rating</label>
+  <div style="font-size:12px;opacity:.7;margin-bottom:4px">
+    <span id="rating-min-label">½</span> — <span id="rating-max-label">★★★★★</span>
+  </div>
+
+  <div style="display:flex;gap:6px">
+    <input type="range" id="filter-rating-min" min="1" max="10" step="1" value="1">
+    <input type="range" id="filter-rating-max" min="1" max="10" step="1" value="10">
+  </div>
+</div>
+
+<div id="popup-card" class="popup">
+  <div class="popup-card" id="card"></div>
+</div>
+
+<script type="module">
+// Notice: Only Read operations are imported here. No addDoc, updateDoc, or deleteDoc.
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+/* FIREBASE INIT */
+const app = initializeApp({
+  apiKey:"AIzaSyB6o51Rr8J4z2VPCZIg4CDJbS3iE2rHtBk",
+  authDomain:"gamelog-6a67e.firebaseapp.com",
+  projectId:"gamelog-6a67e"
+});
+const db = getFirestore(app);
+
+/* ELEMENTS */
+const filters=document.getElementById("filters");
+const overlay=document.getElementById("overlay");
+const popupCard=document.getElementById("popup-card");
+const card=document.getElementById("card");
+
+const searchInput=document.getElementById("search-input");
+const filterStatus=document.getElementById("filter-status");
+const sortSelect=document.getElementById("sort");
+const gameList=document.getElementById("game-list");
+const countEl=document.getElementById("count");
+const filterPlatformsDiv=document.getElementById("filter-platforms");
+const filterTagsDiv=document.getElementById("filter-tags");
+const filterTagsSearch=document.getElementById("filter-tags-search");
+const filterYear = document.getElementById("filter-year");
+
+const filterRatingMin = document.getElementById("filter-rating-min");
+const filterRatingMax = document.getElementById("filter-rating-max");
+const ratingMinLabel = document.getElementById("rating-min-label");
+const ratingMaxLabel = document.getElementById("rating-max-label");
+
+let games=[];
+let selectedPlatforms=[];
+let selectedTags=[];
+let allPlatforms=new Set();
+let allTags=new Set();
+
+/* PANEL TOGGLING */
+const closePanels=()=>{ filters.classList.remove("open"); overlay.style.display="none"; }
+document.getElementById("btn-filters").onclick=()=>{ filters.classList.toggle("open"); overlay.style.display="block"; }
+overlay.onclick=closePanels;
+
+/* POPUP CLOSING */
+popupCard.onclick=e=>e.target===popupCard&&(popupCard.style.display="none");
+
+// Basic HTML escaper to prevent XSS when rendering reviews
+const escapeHTML = (str) => {
+  if (!str) return "";
+  const div = document.createElement('div');
+  div.innerText = str;
+  return div.innerHTML;
+};
+
+function renderStars(value) {
+  if (!value) return "—";
+  const full = Math.floor(value);
+  const half = value % 1 >= 0.5;
+  const empty = 5 - full - (half ? 1 : 0);
+  return "★".repeat(full) + (half ? "½" : "") + "☆".repeat(empty);
+}
+
+/* LOAD GAMES FROM FIRESTORE (READ ONLY) */
+async function loadGames(){
+  try {
+    const snap = await getDocs(collection(db,"games"));
+    games = snap.docs.map(d=>({id:d.id,...d.data()}));
+    
+    allPlatforms.clear(); allTags.clear();
+    games.forEach(g=>{
+      (g.platforms||[]).forEach(p=>allPlatforms.add(p));
+      (g.tags||[]).forEach(t=>allTags.add(t));
+    });
+    
+    const years = [...new Set(games.map(g => g.year).filter(Boolean))].sort((a,b)=>b-a);
+    filterYear.innerHTML = `<option value="">All years</option>` + years.map(y => `<option value="${y}">${y}</option>`).join("");
+    
+    function ratingLabel(v){
+      const val = v / 2; const full = Math.floor(val); const half = val % 1 >= 0.5;
+      return "★".repeat(full) + (half ? "½" : "");
+    }
+
+    function syncRatingSliders(){
+      let min = Number(filterRatingMin.value); let max = Number(filterRatingMax.value);
+      if (min > max) { [min, max] = [max, min]; filterRatingMin.value = min; filterRatingMax.value = max; }
+      ratingMinLabel.textContent = ratingLabel(min) || "½";
+      ratingMaxLabel.textContent = ratingLabel(max) || "★★★★★";
+      applyFilters();
+    }
+
+    filterRatingMin.oninput = syncRatingSliders;
+    filterRatingMax.oninput = syncRatingSliders;
+    
+    updateFilterOptions();
+    applyFilters();
+  } catch (err) {
+    console.error("Error loading games:", err);
+    countEl.textContent = "Error loading database";
+  }
+}
+
+function updateFilterOptions(){
+  // Sort alphabetically for a cleaner UI
+  const sortedPlatforms = [...allPlatforms].sort();
+  const sortedTags = [...allTags].sort();
+
+  filterPlatformsDiv.innerHTML=sortedPlatforms.map(p=>`<label><input type="checkbox" value="${p}"> ${p}</label>`).join("");
+  filterTagsDiv.innerHTML=sortedTags.map(t=>`<label><input type="checkbox" value="${t}"> ${t}</label>`).join("");
+  
+  filterPlatformsDiv.querySelectorAll("input").forEach(chk=>{
+    chk.onchange=()=>{selectedPlatforms=[...filterPlatformsDiv.querySelectorAll("input:checked")].map(c=>c.value); applyFilters();}
+  });
+  filterTagsDiv.querySelectorAll("input").forEach(chk=>{
+    chk.onchange=()=>{selectedTags=[...filterTagsDiv.querySelectorAll("input:checked")].map(c=>c.value); applyFilters();}
+  });
+}
+
+filterTagsSearch.oninput=()=>{
+  const q=filterTagsSearch.value.toLowerCase();
+  filterTagsDiv.querySelectorAll("label").forEach(l=>{ l.style.display=l.textContent.toLowerCase().includes(q)?"block":"none"; });
+};
+
+filterYear.onchange = applyFilters;
+
+function applyFilters(){
+  let list=[...games];
+  const q=searchInput.value.toLowerCase();
+  if(q) list=list.filter(g=>g.title.toLowerCase().includes(q));
+  if(filterStatus.value) list=list.filter(g=>g.status===filterStatus.value);
+  if(selectedPlatforms.length) list=list.filter(g=>(g.platforms||[]).some(p=>selectedPlatforms.includes(p)));
+  if(selectedTags.length) list=list.filter(g=>(g.tags||[]).some(t=>selectedTags.includes(t)));
+  if (filterYear.value) { list = list.filter(g => String(g.year) === filterYear.value); }
+  
+  const minRating = Number(filterRatingMin.value) / 2;
+  const maxRating = Number(filterRatingMax.value) / 2;
+  list = list.filter(g => {
+    if (g.rating == null) return minRating === 0.5 && maxRating === 5;
+    return g.rating >= minRating && g.rating <= maxRating;
+  });
+  
+  list.sort((a, b) => {
+    switch (sortSelect.value) {
+      case "created_desc": return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+      case "created_asc": return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+      case "title_asc": return a.title.localeCompare(b.title);
+      case "title_desc": return b.title.localeCompare(a.title);
+      case "year_desc": return (b.year || 0) - (a.year || 0);
+      case "year_asc": return (a.year || 0) - (b.year || 0);
+      case "rating_desc": return (b.rating || 0) - (a.rating || 0);
+      case "rating_asc": return (a.rating || 0) - (b.rating || 0);
+      default: return 0;
+    }
+  });
+  render(list);
+}
+
+function render(list){
+  gameList.innerHTML="";
+  countEl.textContent=`Showing: ${list.length}`;
+  list.forEach(g=>{
+    const div=document.createElement("div");
+    div.className="game-item";
+    div.innerHTML = `
+      <div class="game-title-row">
+        <span class="game-title">${escapeHTML(g.title)}</span>
+        ${g.year ? `<span class="game-year">(${g.year})</span>` : ""}
+      </div>
+      <div class="game-meta-row">
+        <span class="status-pill status-${g.status}">${g.status}</span>
+        ${g.platforms?.length ? `<span class="meta-dot">•</span><span class="game-platform">${escapeHTML(g.platforms[0])}</span>` : ""}
+        ${g.rating ? `<span class="meta-dot">•</span><span class="game-rating star-rating">${renderStars(g.rating)}</span>` : ""}
+      </div>`;
+    div.onclick = () => openCard(g);
+    gameList.appendChild(div);
+  });
+}
+
+searchInput.oninput=applyFilters;
+filterStatus.onchange=applyFilters;
+sortSelect.onchange=applyFilters;
+
+/* OPEN CARD (VIEW ONLY) */
+function openCard(g){
+  const replays = Array.isArray(g.replays) ? g.replays.length : (g.replayDates?.length || 0);
+  
+  card.innerHTML = `
+  <h2>${escapeHTML(g.title)}</h2>
+  <div class="meta">Added: ${g.createdAt ? new Date(g.createdAt.seconds * 1000).toLocaleDateString() : "Unknown"}</div>
+  <div class="row"><span>Release Year</span><strong>${g.year || "—"}</strong></div>
+  <div class="row"><span>Status</span><strong style="text-transform: capitalize;">${g.status}</strong></div>
+  <div class="row"><span>Rating</span><strong class="star-rating">${renderStars(g.rating)}</strong></div>
+  
+  <div class="card-section">
+    <h4>Platforms</h4>
+    <div class="card-chips">${(g.platforms || []).length ? g.platforms.map(p => `<div class="card-chip">${escapeHTML(p)}</div>`).join("") : `<div class="card-chip" style="opacity:.5">None</div>`}</div>
+  </div>
+  
+  <div class="card-section">
+    <h4>Tags</h4>
+    <div class="card-chips">${(g.tags || []).length ? g.tags.map(t => `<div class="card-chip tag">${escapeHTML(t)}</div>`).join("") : `<div class="card-chip tag" style="opacity:.5">None</div>`}</div>
+  </div>
+  
+  <div class="card-section">
+    <h4>Replays</h4>
+    <div class="replay-count">Total replays: ${replays}</div>
+    ${replays > 0 ? `<div class="replay-actions"><button id="btn-view-replays">View History</button></div>` : ""}
+    <div id="replay-list" class="replay-list"></div>
+  </div>
+  
+  <div class="card-section">
+    <h4>Review</h4>
+    <div class="review-box">${escapeHTML(g.review) || "No review written."}</div>
+  </div>`;
+  
+  popupCard.style.display="flex";
+
+  const btnViewReplays = document.getElementById("btn-view-replays");
+  if (btnViewReplays) {
+    const replayListEl = document.getElementById("replay-list");
+    btnViewReplays.onclick = () => {
+      if (replayListEl.style.display === "none" || !replayListEl.style.display) {
+        replayListEl.style.display = "block";
+        const replayItems = Array.isArray(g.replays) ? g.replays : (g.replayDates || []).map(d => ({ date: d, rating: null }));
+        replayItems.sort((a, b) => b.date.seconds - a.date.seconds);
+        replayListEl.innerHTML = `<div class="replay-timeline">${replayItems.map(r => `<div class="replay-item"><time>${new Date(r.date.seconds * 1000).toLocaleDateString()}</time>${r.rating ? `<div style="opacity:.7">Rating: ${r.rating}/5</div>` : ``}</div>`).join("")}</div>`;
+      } else { 
+        replayListEl.style.display = "none"; 
+      }
+    };
+  }
+}
+
+// Initial Data Fetch
+loadGames();
+</script>
+</body>
+</html>
