@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>aeonstudios</title>
+    <style>
+        /* Sleek Tron: Ares Red Theme */
+        :root {
+            --bg-solid: #030000;
+            --bg-elevated: #0a0000;
+            --text-main: #ffffff;
+            --text-muted: #a37777;
+            --accent: #ff0022;
+            --accent-glow: rgba(255, 0, 34, 0.5);
+            --border: rgba(255, 0, 34, 0.3);
+            --grid-line: rgba(255, 0, 34, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 1. CRT Flicker & Scanlines (Hardware Accelerated) */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 9998;
+            animation: crtFlicker 0.15s infinite;
+            opacity: 0.8;
+            will-change: opacity;
+            transform: translateZ(0);
+        }
+
+        /* 2. Continuous Downward Scanner Sweep (Optimized with Transform) */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 15vh;
+            background: linear-gradient(to bottom, transparent, rgba(255, 0, 34, 0.08), transparent);
+            pointer-events: none;
+            z-index: 100;
+            animation: radarSweep 6s linear infinite;
+            will-change: transform;
+            transform: translateZ(0);
+        }
+
+        @keyframes crtFlicker {
+            0% {
+                opacity: 0.8;
+            }
+
+            50% {
+                opacity: 0.85;
+            }
+
+            100% {
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes radarSweep {
+            0% {
+                transform: translateY(-15vh);
+            }
+
+            100% {
+                transform: translateY(100vh);
+            }
+        }
+
+        body {
+            background-color: var(--bg-solid);
+            /* Grid Background */
+            background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px), radial-gradient(circle at 50% 0%, #220000 0%, var(--bg-solid) 80%);
+            background-size: 40px 40px, 40px 40px, 100% 100%;
+            background-position: center top;
+            color: var(--text-main);
+            line-height: 1.7;
+            padding-top: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            will-change: background-position;
+        }
+
+            /* Continuous Slow Grid Movement */
+            body.grid-active {
+                animation: driftGrid 15s linear infinite;
+            }
+
+        @keyframes driftGrid {
+            0% {
+                background-position: 0 0, 0 0, center top;
+            }
+
+            100% {
+                background-position: 0 40px, 0 40px, center top;
+            }
+        }
+
+        /* 3. Vertical Falling Data Streams (GPU Accelerated) */
+        .data-stream {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 40vh;
+            background: linear-gradient(to bottom, transparent, var(--accent));
+            opacity: 0.5;
+            animation: dataFall linear infinite;
+            pointer-events: none;
+            z-index: -1;
+            will-change: transform;
+            transform: translateZ(0);
+        }
+
+        @keyframes dataFall {
+            0% {
+                transform: translateY(-40vh);
+            }
+
+            100% {
+                transform: translateY(100vh);
+            }
+        }
+
+        /* ============================ */
+        /* CONSOLE BOOT SCREEN          */
+        /* ============================ */
+        #bootScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #020000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 40px 24px;
+            box-shadow: inset 0 0 150px rgba(255, 0, 34, 0.1);
+        }
+
+        .terminal-container {
+            font-family: "Courier New", Courier, monospace;
+            color: var(--accent);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            text-shadow: 0 0 5px var(--accent), 0 0 12px var(--accent-glow);
+        }
+
+        .sys-line {
+            display: flex;
+            margin-bottom: 2px;
+        }
+
+        .text-content {
+            white-space: pre-wrap;
+        }
+
+        .blink-cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.1em;
+            background-color: var(--accent);
+            animation: blinker 0.8s step-end infinite;
+            box-shadow: 0 0 10px var(--accent);
+            margin-left: 2px;
+        }
+
+        @keyframes blinker {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* Digitization Flash Element */
+        #flashOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #fff;
+            z-index: 10000;
+            opacity: 0;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            will-change: opacity, filter;
+        }
+
+        .flash-anim {
+            animation: digitizeFlash 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @keyframes digitizeFlash {
+            0% {
+                opacity: 1;
+                filter: brightness(2);
+            }
+
+            40% {
+                background: var(--accent);
+                opacity: 0.9;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* ============================ */
+        /* MAIN SITE STRUCTURE          */
+        /* ============================ */
+        .main-container {
+            width: 100%;
+            max-width: 900px;
+            padding: 0 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+            flex-grow: 1;
+            display: none;
+        }
+
+            .main-container.active {
+                display: flex;
+            }
+
+        /* Sticky Header */
+        .sticky-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(3, 0, 0, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--accent);
+            display: none;
+            justify-content: center;
+            z-index: 1000;
+            transform: translateY(-100%);
+            animation: dropHeader 0.8s forwards, breatheHeader 4s infinite alternate;
+            will-change: transform, box-shadow;
+        }
+
+            .sticky-header.active {
+                display: flex;
+            }
+
+        @keyframes dropHeader {
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes breatheHeader {
+            0% {
+                box-shadow: 0 2px 10px rgba(255, 0, 34, 0.2);
+            }
+
+            100% {
+                box-shadow: 0 2px 25px rgba(255, 0, 34, 0.5);
+            }
+        }
+
+        .header-content {
+            width: 100%;
+            max-width: 900px;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-logo {
+            height: 40px;
+            width: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+            cursor: pointer;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .apps-wrapper {
+            position: relative;
+        }
+
+        /* Shared Header Button Styles */
+        .apps-btn, .mute-btn, .about-toggle-btn {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 0 5px var(--accent-glow);
+            position: relative;
+            overflow: hidden;
+            animation: breatheBtn 3s infinite alternate;
+            will-change: box-shadow;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .apps-btn {
+            padding: 8px 16px;
+        }
+
+        .mute-btn {
+            padding: 8px 12px;
+            font-size: 1rem;
+        }
+
+        .about-toggle-btn {
+            padding: 8px 12px;
+            white-space: nowrap;
+        }
+
+        @keyframes breatheBtn {
+            0% {
+                border-color: rgba(255,0,34,0.4);
+                text-shadow: 0 0 2px var(--accent-glow);
+            }
+
+            100% {
+                border-color: var(--accent);
+                text-shadow: 0 0 8px var(--accent);
+                box-shadow: inset 0 0 15px rgba(255,0,34,0.3);
+            }
+        }
+
+        .apps-btn:hover, .mute-btn:hover, .about-toggle-btn:hover {
+            background-color: var(--accent);
+            color: #000;
+            box-shadow: 0 0 20px var(--accent);
+            animation: none;
+        }
+
+        .apps-btn.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .apps-dropdown {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            width: 220px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            box-shadow: 0 10px 40px var(--accent-glow);
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, opacity;
+        }
+
+            .apps-dropdown.active {
+                opacity: 1;
+                transform: scale(1);
+                pointer-events: auto;
+            }
+
+        .dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dropdown-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+            .close-btn:hover {
+                color: var(--accent);
+                text-shadow: 0 0 8px var(--accent);
+            }
+
+        .dropdown-link {
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 12px;
+            font-size: 0.95rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+            .dropdown-link:hover {
+                background-color: rgba(255, 0, 34, 0.15);
+                color: var(--accent);
+                padding-left: 20px;
+                text-shadow: 0 0 5px var(--accent-glow);
+            }
+
+            .dropdown-link::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 100%;
+                width: 2px;
+                background-color: var(--accent);
+                transform: scaleY(0);
+                transition: transform 0.2s;
+            }
+
+            .dropdown-link:hover::before {
+                transform: scaleY(1);
+            }
+
+        /* Flowing Sections */
+        .flow-section {
+            opacity: 0;
+            transform: translateY(30px);
+            will-change: transform, opacity;
+        }
+
+        .main-container.active .flow-section {
+            animation: neonReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+            .main-container.active .flow-section:nth-child(1) {
+                animation-delay: 0.2s;
+            }
+
+            .main-container.active .flow-section:nth-child(2) {
+                animation-delay: 0.35s;
+            }
+
+            .main-container.active .flow-section:nth-child(3) {
+                animation-delay: 0.5s;
+            }
+
+        @keyframes neonReveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Subtitle Continuous Glitch Effect */
+        .section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--accent);
+            margin-bottom: 16px;
+            font-weight: 600;
+            display: inline-block;
+            animation: textGlitch 5s infinite;
+            will-change: text-shadow, transform;
+        }
+
+        @keyframes textGlitch {
+            0%, 94% {
+                text-shadow: 0 0 8px var(--accent-glow);
+                transform: translate(0, 0);
+            }
+
+            95% {
+                text-shadow: -2px 0 red, 2px 0 cyan;
+                transform: translate(-1px, 1px);
+            }
+
+            96% {
+                text-shadow: 0 0 8px var(--accent-glow);
+                transform: translate(0, 0);
+            }
+
+            97% {
+                text-shadow: 2px 0 red, -2px 0 cyan;
+                transform: translate(1px, -1px);
+            }
+
+            98%, 100% {
+                text-shadow: 0 0 8px var(--accent-glow);
+                transform: translate(0, 0);
+            }
+        }
+
+        /* 2. About Text */
+        .about-text {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            font-weight: 300;
+            border-left: 2px solid var(--accent);
+            padding-left: 16px;
+            background: linear-gradient(90deg, rgba(255,0,34,0.08) 0%, transparent 100%);
+            margin-bottom: 24px;
+        }
+
+            .about-text strong {
+                color: var(--text-main);
+                font-weight: 500;
+            }
+
+        /* Extra Page: Essay Blocks */
+        .hobby-block {
+            margin-bottom: 28px;
+            padding-left: 20px;
+            border-left: 2px solid var(--border);
+            background: linear-gradient(90deg, rgba(255,0,34,0.04) 0%, transparent 100%);
+            padding-top: 12px;
+            padding-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+            .hobby-block:hover {
+                border-left-color: var(--accent);
+                background: linear-gradient(90deg, rgba(255,0,34,0.08) 0%, transparent 100%);
+            }
+
+        .hobby-title {
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 1.15rem;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .hobby-block:hover .hobby-title {
+            color: var(--accent);
+            text-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .hobby-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 300;
+            line-height: 1.8;
+        }
+
+        /* 3. Projects Stack */
+        .project-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .project-item {
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid var(--border);
+            background: rgba(10, 0, 0, 0.6);
+            padding: 16px;
+            border-radius: 6px;
+            display: block;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s;
+            will-change: transform, box-shadow, border-color;
+        }
+
+            /* Continuous Internal Light Sweep for Cards (GPU Optimized) */
+            .project-item::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 50%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255,0,34,0.12), transparent);
+                animation: cardSweep 4s infinite;
+                z-index: 1;
+                pointer-events: none;
+                will-change: transform;
+                transform: translateZ(0);
+            }
+
+        @keyframes cardSweep {
+            0% {
+                transform: translateX(-200%);
+            }
+
+            40% {
+                transform: translateX(200%);
+            }
+
+            100% {
+                transform: translateX(200%);
+            }
+        }
+
+        .project-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--accent);
+            transform: translateX(-100%);
+            transition: transform 0.4s ease;
+            z-index: 2;
+            will-change: transform;
+        }
+
+        .project-item:hover {
+            border-color: var(--accent);
+            background: rgba(255, 0, 34, 0.05);
+            box-shadow: 0 5px 25px rgba(255, 0, 34, 0.2) !important;
+            transform: translateY(-2px);
+        }
+
+            .project-item:hover::before {
+                transform: translateX(0);
+            }
+
+        .project-name {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            transition: color 0.2s;
+            position: relative;
+            z-index: 2;
+        }
+
+        .project-item:hover .project-name {
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .project-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* 5. Footer Layout */
+        footer {
+            margin-top: 40px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding-bottom: 40px;
+            opacity: 0;
+        }
+
+        .main-container.active footer {
+            animation: neonReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation-delay: 0.65s;
+        }
+
+        .footer-socials-wrapper {
+            width: 100%;
+            border-top: 1px solid var(--border);
+            padding-top: 32px;
+        }
+
+        .socials-box {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px 12px;
+            margin-top: 16px;
+        }
+
+        .social-link {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.70rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            word-wrap: break-word;
+            line-height: 1.4;
+            padding: 8px 4px;
+            border: 1px solid transparent;
+            text-align: center;
+        }
+
+            .social-link:hover {
+                color: var(--accent);
+                text-shadow: 0 0 8px var(--accent-glow);
+                border-color: var(--border);
+                background: rgba(255,0,34,0.05);
+                border-radius: 4px;
+            }
+
+        .footer-logo {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            opacity: 0.9;
+            border: 1px solid var(--border);
+        }
+
+        /* ============================ */
+        /* PROJECT MODAL                */
+        /* ============================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 24px;
+        }
+
+            .modal-overlay.active {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+        .modal-content {
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            width: 100%;
+            max-width: 450px;
+            padding: 24px;
+            position: relative;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 10px 50px var(--accent-glow);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .close-modal-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+            .close-modal-btn:hover {
+                color: var(--accent);
+                text-shadow: 0 0 10px var(--accent);
+            }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-main);
+            padding-right: 24px;
+        }
+
+        .modal-media {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+            .modal-media::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(rgba(255,0,34,0.05) 50%, transparent 50%);
+                background-size: 100% 4px;
+                pointer-events: none;
+            }
+
+            .modal-media img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+        .modal-desc {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .modal-go-btn {
+            display: inline-block;
+            background-color: var(--accent);
+            color: #ffffff;
+            text-align: center;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+            .modal-go-btn:hover {
+                background-color: #fff;
+                color: #000;
+                box-shadow: 0 0 20px var(--accent-glow);
+            }
+
+        /* ============================ */
+        /* MEDIA QUERIES (RESPONSIVE)   */
+        /* ============================ */
+        @media (max-width: 767px) {
+            .main-container, .header-content {
+                max-width: 500px;
+            }
+
+            .header-actions {
+                gap: 8px;
+            }
+
+            .about-toggle-btn {
+                font-size: 0.75rem;
+                padding: 8px 10px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .project-stack {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 24px;
+            }
+
+            .socials-box {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .footer-logo {
+                max-width: 500px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- AUDIO -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="init.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- DIGITIZATION FLASH -->
+    <div id="flashOverlay"></div>
+
+    <!-- CONSOLE BOOT SCREEN -->
+    <div id="bootScreen">
+        <div id="logContainer" class="terminal-container"></div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="sticky-header" id="mainHeader">
+        <div class="header-content">
+            <img class="header-logo" id="logoHomeBtn" src="logo.jpg" alt="Logo">
+            <div class="header-actions">
+                <button id="aboutToggleBtn" class="about-toggle-btn">More About Me</button>
+                <button id="muteBtn" class="mute-btn">🔊</button>
+                <div class="apps-wrapper">
+                    <button class="apps-btn" id="appsBtn">☰</button>
+                    <nav class="apps-dropdown" id="appsMenu">
+                        <div class="dropdown-header">
+                            <span class="dropdown-title">.</span>
+                            <button class="close-btn" id="closeBtn">✕</button>
+                        </div>
+                        <a href="myapps.html" class="dropdown-link">My apps</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT (HOMEPAGE) -->
+    <main class="main-container" id="mainContent">
+
+        <section class="flow-section">
+            <h2 class="section-title">About Me</h2>
+            <p class="about-text">
+                I'm Nayan and I make stuff.
+            </p>
+        </section>
+
+        <section class="flow-section">
+            <h2 class="section-title">Works</h2>
+            <div class="project-stack">
+
+                <!-- Added data-long-desc to each project item -->
+                <a href="#" class="project-item"
+                   data-link="https://www.youtube.com/channel/UCApaGg4bFQeVgTxPriRbunQ"
+                   data-media="yt.jpg"
+                   data-long-desc="My old channel got deleted after 8 years of progress, so i made a new one. I post about games, movies and my other hobbies here.">
+                    <div class="project-name">Youtube</div>
+                    <div class="project-description">My new channel where I post about my interests.</div>
+                </a>
+
+                <a href="#" class="project-item"
+                   data-link="https://blockhero.github.io/Project-Deus/"
+                   data-media="deus.jpg"
+                   data-long-desc="I made this game in free time at job so it took like a month to build this demo. I'm still working on it so it will be finished soon.'">
+                    <div class="project-name">Project Deus</div>
+                    <div class="project-description">2D top down open world game.</div>
+                </a>
+
+                <a href="#" class="project-item"
+                   data-link="#"
+                   data-media="poopoo.png"
+                   data-long-desc="I wanted to be little serious with game development and put out a real one so I made this. I didn't use project deus cuz it was too complex and I wanted to put out something small first to learn. Hardest part here was the publishing part and setting up monetization fr.'">
+                    <div class="project-name">PooPoo Runner</div>
+                    <div class="project-description">2D endless runner game.</div>
+                </a>
+
+                <a href="#" class="project-item"
+                   data-link="https://drive.google.com/file/d/17FYxGgSbPK2bPWmSlOcWFOhZ8BOHlCul/view?usp=drivesdk"
+                   data-media="ultimate.jpg"
+                   data-long-desc="It have lots of things from my childhood and everything in it have a story. I'm not gonna write all history here, more hints available in more about me page tho.">
+                    <div class="project-name">Ultimate Collection</div>
+                    <div class="project-description">A small book I made. it's just for fun, nothing else.</div>
+                </a>
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-socials-wrapper">
+                <h2 class="section-title">All Social Links</h2>
+                <div class="socials-box">
+                    <a href="https://www.instagram.com/new.god.deus" class="social-link">Instagram</a>
+                    <a href="https://www.youtube.com/channel/UCApaGg4bFQeVgTxPriRbunQ" class="social-link">YouTube</a>
+                    <a href="https://letterboxd.com/ultramanzero/" class="social-link">Letterboxd (Movies)</a>
+                    <a href="https://srlzd.com/u/NayaN" class="social-link">Serializd (Shows)</a>
+                    <a href="gameloggedview.html" class="social-link">Gamelogged (Games)</a>
+                    <a href="https://aeonstudiosgame.itch.io" class="social-link">Itch.io</a>
+                    <a href="http://www.goodreads.com/friend/i?invite_token=ZDA5ZTRhZjMtYjBiZC00YTkwLWFkZmMtMmQ0YmM1MTFiYzk5" class="social-link">Goodreads (Books)</a>
+                    <a href="https://maps.app.goo.gl/CivuRVHivFnSSp3v9?g_st=ac" class="social-link">Google Maps Contributor</a>
+                </div>
+            </div>
+            <img class="footer-logo" src="logo2.jpg" alt="Footer Banner">
+        </footer>
+
+    </main>
+
+    <!-- EXTRA PAGE CONTENT: MORE ABOUT ME -->
+    <main class="main-container" id="extraContent">
+        <section class="flow-section">
+            <h2 class="section-title">More About Me</h2>
+            <p class="about-text">
+                I'm Nayan and I make stuff... well I already said that on homepage, we gonna go slightly more in detail about things i do and why i do them. So let's start my mini self essay with hobbies and interests.
+            </p>
+
+            <div class="hobby-block">
+                <div class="hobby-title">1. Art</div>
+                <div class="hobby-desc">
+                    Drawing stuff was probably my first hobby ever. I started drawing when i was very small. I like to draw cartoons or comic book characters mostly. I also had interest in making things out of waste items like paper or cardboard and more stuff like that. I would make my own paper-cardboard toys. I don't do those cardboard things anymore cuz lack of time and resources but i still draw sometimes.
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">2. YouTube</div>
+                <div class="hobby-desc">
+                    When i first got access to internet obviously first thing i did was downloading and playing lots of games, then right after that it was the youtube craze. I started making vids around 2016 but my actual main acc started in 2017 where i posted continuously. I gave up sometimes but always picked up after breaks. My biggest milestones for me were having 100k+ views on my channel without the help of YT shorts. and max sub were just 400 or something. I posted here about everything I knew and learnt in my life, so it was very important to me. Sadly in 2025 it got deleted when it was lowkey hacked so it all went away. I remade new channel few months later but it never got same success as before but it's not like I'll quit now. Having a yt channel led me into learning lots of new things so it's not like all of it was waste, i learn photo and video editing and some SEO stuff.
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">3. Games</div>
+                <div class="hobby-desc">
+                    Like i mentioned above, I love playing games. even since i was a small baby, I started with dad's phone and computer and sum consoles, then as time progressed I used my own phone and then computer and emulators and what to not to play every game I wanted. I even got into E-Sports to play games professionally once but that didn't work out. I still play lots of games, lowkey that was the main thing about my yt channel.
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">4. Movies</div>
+                <div class="hobby-desc">
+                    Just like games, I had huge interest in movies since childhood for many reasons. I think it pumped up more after pandemic and then even more when i started using letterboxd to review things I watch. I also wanted to become a movie director once so that's also why I liked watching movies to learn a bit.
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">5. Reading Books</div>
+                <div class="hobby-desc">
+                    Not tryna brag but i was lowkey smart in school so i loved reading books, mostly literature books with stories. And after getting internet i obviously went into reading comics online. That's when i started reading books as a hobby. I read other things too,.not just comic books. I loved making my own stories too so i lowky wanna write some books as well.
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">6. Game Development</div>
+                <div class="hobby-desc">
+                    While playing games, I always wondered how games were made so game development caught my interest so i would sometimes plan game ideas on paper. When i got my first laptop so i went straight for game development and learnt lil bit from youtube and made a silly game but my laptop was potato so i couldn't do much stuff and didn't got enough support so i dumped this while thing. After few years i started making html games w help of AI that's when I made my first succeed game published on Google Play recently. I have lots of ideas so I'll probably look into this more seriously in near future.
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">7. Animation</div>
+                <div class="hobby-desc">
+                    Same inspiration as movies and game development and reading books. I wanted to learn animation but again my potato laptop help me back and then i just didn't have enough motivation to do it so this hobby is just in back of my mind, suppressed. Maybe I'll learn it in future
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">8. Travel</div>
+                <div class="hobby-desc">
+                    All my life i never got to travel much. I only got out of my country once, 4-5 times out of my state, a few times out of my city. I even went out of my house very less than a normal person. But i had big interest in seeing places. It was during last days of my last job when i was feeling lost so i started going anywhere without plans that lead into me visiting tourist spots in my city for 2-3 months. Once i get lots of money I'll def travel a lot.
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">9. Photography</div>
+                <div class="hobby-desc">
+                    I always take photographs with phone so it's not that big of a hobby but i did join a photography college once but dropped it after few months.
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">10. Digital Marketing</div>
+                <div class="hobby-desc">
+                    It's not a hobby, more like a skill. I learn some of it by myself w my own yt channel then later on did a fulltime job in this field for an year or sum. so that adds up to my experience w these e commerc, digital marketing and media editing stuff.
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">11. Music</div>
+                <div class="hobby-desc">
+                    I love listening to music and mostly to soundtrack genre so that obviously made me want to make my own music. I started learning with Walkband app on phone and synthesia on pc with help of yt tutorials like a lost amateur. I did few my own music for the vids i made on my old channel.
+                </div>
+            </div>
+
+            <div class="hobby-block">
+                <div class="hobby-title">12. Social Media</div>
+                <div class="hobby-desc">
+                    I had an interest in posting stuff online other than just yt so i had a hobby page on gram, 2 to be more specific. 1 was for my main hobbies like YT, movies, games, books. I made posts on it of ranking lists or my reviews. And other page was for like shit-posting where i made own memes and posted there. sometimes i reposted my favourite memes there too. It was like a micro internet celebrity thing for me but those accounts got suspended recently so i lost it all too.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- PROJECT MODAL -->
+    <div id="projectModal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="closeProjectBtn" class="close-modal-btn">✕</button>
+            <h3 id="modalTitle" class="modal-title">Project Title</h3>
+            <div class="modal-media">
+                <img id="modalImage" src="placeholder.jpg" alt="Media Placeholder">
+            </div>
+            <!-- Added specific styling for short vs long description visually -->
+            <p id="modalDesc" class="modal-desc" style="font-weight: 600; color: var(--text-main);"></p>
+            <p id="modalLongDesc" class="modal-desc" style="margin-top: 8px;"></p>
+            <a href="#" id="modalGoBtn" class="modal-go-btn" target="_blank" rel="noopener noreferrer">Open</a>
+        </div>
+    </div>
+
+    <script>
+        // -------------------------
+        // HIGH-SPEED REALISTIC BOOT
+        // -------------------------
+        const bootScreen = document.getElementById('bootScreen');
+        const logContainer = document.getElementById('logContainer');
+        let bootReady = false;
+
+        const bootLines = [
+            "> START_SEQUENCE: A.E. KERNEL v9.4.2",
+            "> kernel: root=UUID=7a8... ro quiet splash",
+            "> EXT4-fs (sda1): mounted filesystem with ordered data mode",
+            "> systemd[1]: Inserted module 'autofs4'",
+            "> Initializing cgroup subsys cpuset",
+            "> random: crng init done",
+            "> usb 1-1: new high-speed USB device number 2 using xhci_hcd",
+            "> IPv6: ADDRCONF(NETDEV_UP): eth0: link is not ready",
+            "> Bypassing firewall protocols...",
+            "> Override successful. Establishing secure uplink.",
+            "> Mounting virtual grid drives...",
+            "> Fetching user node data...",
+            "> Syncing audio protocols... buffer at 2048",
+            "> Initializing visual matrix...",
+            "> Checking system integrity... Hash matched.",
+            "> SYSTEM_READY.",
+            "> Tap to start"
+        ];
+
+        async function typeText(text, element) {
+            for (let i = 0; i < text.length; i++) {
+                element.innerHTML += text.charAt(i);
+                // Extremely fast typing (2-10ms per char)
+                await new Promise(r => setTimeout(r, 2 + Math.random() * 8));
+            }
+        }
+
+        async function runBootSequence() {
+            await new Promise(r => setTimeout(r, 200));
+
+            for (let i = 0; i < bootLines.length; i++) {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'sys-line';
+                lineDiv.innerHTML = '<span class="text-content"></span><span class="blink-cursor"></span>';
+                logContainer.appendChild(lineDiv);
+
+                const textSpan = lineDiv.querySelector('.text-content');
+                const cursorSpan = lineDiv.querySelector('.blink-cursor');
+
+                if (i === bootLines.length - 1) {
+                    await typeText(bootLines[i], textSpan);
+                    bootReady = true;
+                    bootScreen.style.cursor = "pointer";
+                } else {
+                    await typeText(bootLines[i], textSpan);
+                    cursorSpan.remove();
+                    // Extremely fast line transitions (10-90ms)
+                    await new Promise(r => setTimeout(r, 10 + Math.random() * 80));
+                }
+            }
+        }
+
+        runBootSequence();
+
+        // -------------------------
+        // SPAWN AMBIENT DATA STREAMS
+        // -------------------------
+        function spawnDataStreams() {
+            const streamContainer = document.createElement('div');
+            streamContainer.id = 'streamContainer';
+            document.body.appendChild(streamContainer);
+
+            for (let i = 0; i < 12; i++) {
+                const stream = document.createElement('div');
+                stream.className = 'data-stream';
+                stream.style.left = Math.random() * 100 + 'vw';
+                stream.style.animationDuration = (4 + Math.random() * 6) + 's';
+                stream.style.animationDelay = (Math.random() * 5) + 's';
+                streamContainer.appendChild(stream);
+            }
+        }
+
+        // -------------------------
+        // TRANSITION LOGIC
+        // -------------------------
+        const mainContent = document.getElementById('mainContent');
+        const extraContent = document.getElementById('extraContent');
+        const mainHeader = document.getElementById('mainHeader');
+        const bgMusic = document.getElementById('bgMusic');
+        const flashOverlay = document.getElementById('flashOverlay');
+        const muteBtn = document.getElementById('muteBtn');
+
+        bootScreen.addEventListener('click', () => {
+            if (bootReady) {
+                // Play Audio
+                bgMusic.volume = 0.5;
+                bgMusic.play().catch(e => console.log("Audio file missing", e));
+
+                if (bgMusic.paused) {
+                    muteBtn.innerText = '🔇';
+                } else {
+                    muteBtn.innerText = '🔊';
+                }
+
+                document.body.classList.add('grid-active');
+                spawnDataStreams();
+
+                flashOverlay.classList.add('flash-anim');
+                bootScreen.style.display = "none";
+
+                mainContent.classList.add('active');
+                mainHeader.classList.add('active');
+
+                setTimeout(() => {
+                    flashOverlay.style.display = "none";
+                }, 700);
+            }
+        });
+
+        // Mute Button Logic
+        muteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (bgMusic.muted || bgMusic.paused) {
+                bgMusic.muted = false;
+                bgMusic.play().catch(e => console.log(e));
+                muteBtn.innerText = '🔊';
+            } else {
+                bgMusic.muted = true;
+                muteBtn.innerText = '🔇';
+            }
+        });
+
+        // -------------------------
+        // UI, MENU & PAGE NAVIGATION LOGIC
+        // -------------------------
+        const appsBtn = document.getElementById('appsBtn');
+        const appsMenu = document.getElementById('appsMenu');
+        const closeBtn = document.getElementById('closeBtn');
+
+        // Navigation targets
+        const aboutToggleBtn = document.getElementById('aboutToggleBtn');
+        const logoHomeBtn = document.getElementById('logoHomeBtn');
+
+        // Menu Toggle
+        appsBtn.addEventListener('click', (e) => { e.stopPropagation(); appsBtn.classList.add('hidden'); appsMenu.classList.add('active'); });
+        closeBtn.addEventListener('click', (e) => { e.stopPropagation(); appsMenu.classList.remove('active'); appsBtn.classList.remove('hidden'); });
+        document.addEventListener('click', (e) => { if (!appsMenu.contains(e.target) && e.target !== appsBtn) { appsMenu.classList.remove('active'); appsBtn.classList.remove('hidden'); } });
+
+        // Switch to Extra Page
+        function showExtraPage() {
+            mainContent.classList.remove('active');
+
+            // Brief timeout to allow animations to reset
+            setTimeout(() => {
+                extraContent.classList.add('active');
+            }, 50);
+
+            aboutToggleBtn.innerText = 'Home';
+            window.scrollTo(0, 0);
+        }
+
+        // Switch back to Home
+        function showHome() {
+            extraContent.classList.remove('active');
+
+            setTimeout(() => {
+                mainContent.classList.add('active');
+            }, 50);
+
+            aboutToggleBtn.innerText = 'More About Me';
+            window.scrollTo(0, 0);
+        }
+
+        aboutToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (extraContent.classList.contains('active')) {
+                showHome();
+            } else {
+                showExtraPage();
+            }
+        });
+
+        logoHomeBtn.addEventListener('click', () => {
+            if (extraContent.classList.contains('active')) {
+                showHome();
+            }
+        });
+
+        // -------------------------
+        // PROJECT MODAL
+        // -------------------------
+        const projectItems = document.querySelectorAll('.project-item');
+        const projectModal = document.getElementById('projectModal');
+        const closeProjectBtn = document.getElementById('closeProjectBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDesc = document.getElementById('modalDesc');
+        const modalLongDesc = document.getElementById('modalLongDesc');
+        const modalGoBtn = document.getElementById('modalGoBtn');
+        const modalImage = document.getElementById('modalImage');
+
+        projectItems.forEach(item => {
+            item.addEventListener('click', (event) => {
+                if (!item.getAttribute('data-link')) return;
+
+                event.preventDefault();
+                modalTitle.innerText = item.querySelector('.project-name').innerText;
+
+                // Set short description
+                modalDesc.innerText = item.querySelector('.project-description').innerText;
+
+                // Set long description (fallback if none is provided)
+                modalLongDesc.innerText = item.getAttribute('data-long-desc') || "";
+
+                modalGoBtn.href = item.getAttribute('data-link');
+                modalImage.src = item.getAttribute('data-media') || 'deus.jpg';
+                projectModal.classList.add('active');
+            });
+        });
+
+        closeProjectBtn.addEventListener('click', () => projectModal.classList.remove('active'));
+        projectModal.addEventListener('click', (e) => { if (e.target === projectModal) projectModal.classList.remove('active'); });
+    </script>
+</body>
+</html>
